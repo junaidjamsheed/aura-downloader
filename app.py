@@ -1,17 +1,19 @@
 from flask import Flask, request, jsonify
 import subprocess
+import os
 
 app = Flask(__name__)
 
 @app.route('/get-link', methods=['GET'])
 def get_link():
     url = request.args.get('url')
-    # --no-playlist দিলে সার্ভার খুব ফাস্ট হবে
-    # --get-url শুধু ডাউনলোডের ডাইরেক্ট লিংকটা দেবে
-    command = f"yt-dlp --no-playlist -g {url}"
+    # প্রথমবার আপডেট নিশ্চিত করা
+    subprocess.run(["yt-dlp", "-U"], capture_output=True)
+    
+    # -g এবং --no-check-certificate দিয়ে ট্রাই করছি
+    command = f"yt-dlp --no-check-certificate -g {url}"
     try:
         result = subprocess.check_output(command, shell=True).decode().strip()
-        # রেজাল্ট থেকে শুধু প্রথম লিংকটি নিচ্ছি
         return jsonify({"url": result.split('\n')[0]})
     except Exception as e:
         return jsonify({"error": str(e)})
